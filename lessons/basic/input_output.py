@@ -12,5 +12,5 @@ print(100 + 200)
 print('100 + 200 =', 100 + 200)
 
 print('输入名字: ')
-name = input()
-print('hello,', name, '!')
+NAME = input() # input 输入的都是 str
+print('hello,', NAME, '!')
