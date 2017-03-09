@@ -50,3 +50,25 @@ bool(1) # True
 hex(100) # '0x64'
 hex(255) # '0xff'
 ```
+2. 定义函数 空函数 返回tuple 
+3. 函数参数 参数类型检查
+    - 位置参数(必选参数)
+    ```python
+    def power(x):
+        return x * x
+    ```
+    - 默认参数
+    ```python
+    def power(x, n = 2):
+        '''
+        1 必选参数在前，默认参数在后
+        2 默认参数必须指向不变对象
+        '''
+        s = 1
+        while n > 0:
+            n = n - 1
+            s = s * x
+        return s
+    ```
+    - 可变参数
+    - 关键字参数
