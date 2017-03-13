@@ -325,3 +325,7 @@ True
 #### 1.2 filter
 
 #### 1.3 sorted
+
+### 2. 装饰器函数 lessons/functions/func_decorator.py
+
+### 3. 偏函数，固定部分参数 lessons/functions/func_partial.py
