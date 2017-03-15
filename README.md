@@ -412,3 +412,74 @@ private 函数和变量“不应该”被直接引用，而不是“不能”被
 pip3 -V
 pip3 install Pillow
 ```
+
+## 六、面向对象编程
+### 1. 类和实例
+### 2. 访问限制
+```py
+# 在类中定义的函数第一个参数永远是实例变量 self
+# 在 Python 中，实例的变量名如果以 __ 开头，就变成了一个私有变量（private），只有内部可以访问，外部不能访问。
+# 在 Python 中，变量名类似 __xxx__ 的，也就是以双下划线开头，并且以双下划线结尾的，是特殊变量，特殊变量是可以直接访问的，不是 private 变量。
+# 在 Python 中，按照约定俗成的习惯，以 _ 开头的变量， 虽然可以被访问，但是，请当作私有变量，不要随意访问
+# 对于双下划线开头的实例变量，Python 解释器对外把 __name 变量改成了 _Student__name，所以，仍然可以通过 _Student__name 来访问 __name 变量
+class Student(object):
+    def __init__(self, name, score):
+        self.__name = name
+        self.score = score
+
+bart = Student('Ada', 90)
+bart.score # 90
+bart.__name # error
+```
+### 3. 继承和多态 `/lessons/oop/oop1.py`
+### 4. 获取对象信息
+
++ type()
++ isinstance()
++ dir()
++ getattr()、setattr()、hasattr()
+
+类似 `__xxx__` 的属性和方法在Python中都是有特殊用途的，比如 `__len__` 方法返回长度。在 Python 中，如果你调用 `len()` 函数试图获取一个对象的长度，实际上，在 `len()` 函数内部，它自动去调用该对象的 `__len__()` 方法，所以，下面的代码是等价的：
+
+```py
+len('ABC')
+'ABC'.__len__()
+```
+
+如果自己写的类想用 `len(myObj)` 的话，就在内部实现 `__len__()` 方法
+
+```py
+class MyObj(Object):
+    def __len__(self):
+        return 1000
+
+obj = MyObj()
+len(obj)
+```
+
+### 5. 类属性与实例属性
+
+当我们定义了一个类属性后，这个属性虽然归类所有，但类的所有实例都可以访问到。
+
+在编写程序的时候，千万不要把实例属性和类属性使用相同的名字，因为相同名称的实例属性将屏蔽掉类属性，但是当你删除实例属性后，再使用相同的名称，访问到的将是类属
+
+## 七、面向对象高级编程
+
+### 1. 使用 `__slots__` `/lessons/oop/oop2.py`
+### 2. 使用 `@property` `/lessons/oop/oop3.py`
+### 3. 多重继承 MixIn
+
+```py
+# 举例
+class MyTCPServer(TCPServer, ForkingMixIn):
+    '编写一个多进程模式的TCP服务'
+    pass
+
+class MyUDPServer(UDPServer, ThreadingMixIn):
+    '编写一个多线程模式的UDP服务'
+    pass
+
+class MyTCPServer(TCPServer, CoroutineMixIn):
+    '一个更先进的协程模型，可以编写一个CoroutineMixIn'
+    pass
+```
