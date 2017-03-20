@@ -483,3 +483,23 @@ class MyTCPServer(TCPServer, CoroutineMixIn):
     '一个更先进的协程模型，可以编写一个CoroutineMixIn'
     pass
 ```
+
+### 4. 定制类 `/lessons/oop/oop4.py`
+
+[官方文档 Special method names](https://docs.python.org/3/reference/datamodel.html#special-method-names)
+
++ `__str__` （用 print 打印)
++ `__repr__` (直接命令行输出)
++ `__iter__` `__next__` 用 for in 循环
++ `__getitem__` 用 [] 下标取出数据， 处理 下标、切片对象、step 参数
++ `__setitem__`
++ `__delitem__`
++ `__getattr__` 返回属性或者函数
++ `__call__` 直接调用实例本身 `callable` 对象,通过callable()函数，我们就可以判断一个对象是否是“可调用”对象。
+
+### 5. 枚举类 `/lessons/oop/oop5.py`
+### 6. 元类 `/lessons/oop/oop6.py`
+
++ `type()`
++ `metaclass` 动态创建类 示例: `/lessons/oop/oop_orm.py`
+
