@@ -5,6 +5,8 @@
 ORM 全称 “Object Relational Mapping”，即对象-关系映射，\
 就是把关系数据库的一行映射为一个对象，也就是一个类对应一个表，这样，写代码更简单，不用直接操作SQL语句。'''
 
+# 没看懂
+
 __author__ = 'Ma Yanqiong'
 
 # ORM 框架
