@@ -503,3 +503,476 @@ class MyTCPServer(TCPServer, CoroutineMixIn):
 + `type()`
 + `metaclass` 动态创建类 示例: `/lessons/oop/oop_orm.py`
 
+## 八、错误、调试、测试
+
+### 1. `try`
+
+    try ... except ... else ... finally
+
+[Python所有的错误都是从BaseException类派生的，常见的错误类型和继承关系](https://docs.python.org/3/library/exceptions.html#exception-hierarchy)
+
+```py
+try:
+    print('try...')
+    r = 10 / int('2')
+    print('result:', r)
+except ValueError as e:
+    print('ValueError:', e)
+except ZeroDivisionError as e:
+    print('ZeroDivisionError:', e)
+else:
+    print('no error!')
+finally:
+    print('finally...')
+print('END')
+```
+
+```py
+# 所有 Error 都继承自 BaseException，except 会捕获其类型和子类
+try:
+    foo()
+except ValueError as e:
+    print('ValueError')
+except UnicodeError as e:
+    print('UnicodeError')
+# 第二个 except 永远也捕获不到 UnicodeError，因为 UnicodeError 是 ValueError 的子类
+```
+
+### 2. 调用堆栈
+
+根据错误信息定位错误位置。
+
+### 3. 记录错误 `logging`模块
+
+如果不捕获错误，自然可以让Python解释器来打印出错误堆栈，但程序也被结束了。既然我们能捕获错误，就可以把错误堆栈打印出来，然后分析错误原因，同时，让程序继续执行下去。
+
+`/lessons/errors/err_logging.py`
+
+同样是出错，但程序打印完错误信息后会继续执行，并正常退出。
+
+[错误配置文档](https://docs.python.org/3/howto/logging-cookbook.html)
+
+### 4. 抛出错误 `raise`
+
+只有在必要的时候才定义我们自己的错误类型。如果可以选择 Python 已有的内置的错误类型（比如 ValueError，TypeError），尽量使用 Python 内置的错误类型。
+
+```py
+class FooError(ValueError):
+    pass
+
+def foo(s):
+    n = int(s)
+    if n==0:
+        raise FooError('invalid value: %s' % s)
+    return 10 / n
+
+foo('0')
+```
+```py
+def foo(s):
+    n = int(s)
+    if n==0:
+        raise ValueError('invalid value: %s' % s)
+    return 10 / n
+
+def bar():
+    try:
+        foo('0')
+    except ValueError as e:
+        print('ValueError!')
+        raise
+
+# 此处捕获错误目的只是记录一下，便于后续追踪。但是，由于当前函数不知道应该怎么处理该错误，所以，最恰当的方式是继续往上抛，让顶层调用者去处理。
+
+bar()
+```
+`raise` 语句如果不带参数，就会把当前错误原样抛出。
+
+```py
+try:
+    10 / 0
+except ZeroDivisionError:
+    raise ValueError('input error!')
+```
+在 except 中 `raise`一个 Error，还可以把一种类型的错误转化成另一种类型：
+
+### 5. 调试
+
+#### 5.1 print()
+
+#### 5.2 assert()
+如果断言失败，`assert` 语句本身就会抛出 `AssertionError`。
+启动 Python 解释器时可以用 -O 参数来关闭 assert。
+```py
+def foo(s):
+    n = int(s)
+    assert n != 0, 'n is zero!'
+    return 10 / n
+
+def main():
+    foo('0')
+```
+
+#### 5.3 logging
+可以不同的日志级别，输出到文件等。
+
+#### 5.4 pdb `/lessons/errors/err.py`
+启动Python的调试器pdb，让程序以单步方式运行，可以随时查看运行状态。
+
+    python3 -m pdb err.py
+
+输入命令 `l` 来查看代码
+
+输入命令 `n` 可以单步执行代码
+
+任何时候都可以输入命令 `p 变量名` 来查看变量
+
+输入命令 `q` 结束调试
+
+#### 5.5 pdb.set_trace() `/lessons/errors/err.py`
+
+这个方法也是用 pdb，但是不需要单步执行。
+我们只需要 import pdb，然后，在可能出错的地方放一个 pdb.set_trace()，就可以设置一个断点。
+
+用命令 `p 变量名` 查看变量
+
+用命令 `c` 继续运行
+
+#### 5.6 IDE
+
+[目前比较好的支持调试功能的 IDE - pycharm](http://www.jetbrains.com/pycharm/)
+
+### 6. 单元测试 `/lessons/tests/unittest_demo.py`
+
+#### 6.1 `unittest`
+
+```
+python3 lessons/tests/unittest_demo.py
+
+或者
+
+python3 -m unittest unittest_demo
+```
+
+#### 6.2 `setUp` 与 `tearDown`
+
+在单元测试中有两个特殊的 `setUp()` 和 `tearDown()` 方法。这两个方法会分别在每调用一个测试方法的前后分别被执行。
+
+设想你的测试需要启动一个数据库，这时，就可以在setUp()方法中连接数据库，在tearDown()方法中关闭数据库，这样，不必在每个测试方法中重复相同的代码。
+
+### 7. 文档测试 `/lessons/tests/doctest_demo.py`
+
+Python内置的“文档测试”（doctest）模块可以直接提取注释中的代码并执行测试。
+
+`doctest` 严格按照 Python 交互式命令行的输入和输出来判断测试结果是否正确。
+
+```py
+def abs(n):
+    '''
+    Function to get absolute value of number.
+
+    Example:
+
+    >>> abs(1)
+    1
+    >>> abs(-1)
+    1
+    >>> abs(0)
+    0
+    '''
+    return n if n >= 0 else (-n)
+```
+
+
+## 八、IO 编程 
+
+`同步 IO` vs `异步 IO`
+
+### 1. 文件读写
+
+#### 1.1 文件读
+
+标示符 `'r'` 表示读
+
+```py
+# python 内置函数
+# 如果文件不存在，open() 函数就会抛出一个 IOError 的错误，并且给出错误码和详细的信息
+# 如果文件打开成功，接下来，调用 read() 方法可以一次读取文件的全部内容，Python 把内容读到内存，用一个str对象表示
+# 最后一步是调用close()方法关闭文件。
+# 文件使用完毕后必须关闭，因为文件对象会占用操作系统的资源，并且操作系统同一时间能打开的文件数量也是有限的
+f = open('/Users/michael/test.txt', 'r')
+str = f.read()
+f.close()
+```
+```py
+# 为了保证无论是否出错都能正确地关闭文件，我们可以使用 try ... finally 来实现：
+try:
+    f = open('/path/to/file', 'r')
+    print(f.read())
+finally:
+    if f:
+        f.close()
+
+# 但是每次都这么写实在太繁琐，所以，Python 引入了 with 语句来自动帮我们调用 close() 方法
+# 和前面的 try ... finally 是一样的，但是代码更佳简洁，并且不必调用f.close()方法
+with open('/path/to/file', 'r') as f:
+    print(f.read())
+```
+
+对于大的文件，可以反复调用 `read(size)` 方法，每次最多读取 `size` 个字节的内容。
+
+调用 `readline()` 可以每次读取一行内容，调用 `readlines()` 一次读取所有内容并按行返回 `list`。
+
+因此，要根据需要决定怎么调用。
+
+如果文件很小，read()一次性读取最方便；如果不能确定文件大小，反复调用read(size)比较保险；如果是配置文件，调用readlines()最方便：
+
+```py
+for line in f.readlines():
+    print(line.strip()) # 把末尾的'\n'删掉
+```
+
+#### 1.2 file-like Object
+
+只要是有 read() 方法的对象就可以
+
+`StringIO` 就是在内存中创建的 `file-like Object`，常用作临时缓冲。
+
+#### 1.3 二进制文件
+
+前面讲的默认都是读取文本文件，并且是UTF-8编码的文本文件。要读取二进制文件，比如图片、视频等等，用'rb'模式打开文件即可：
+
+```bash
+>>> f = open('/Users/michael/test.jpg', 'rb')
+>>> f.read()
+b'\xff\xd8\xff\xe1\x00\x18Exif\x00\x00...' # 十六进制表示的字节
+```
+
+#### 1.4 字符编码
+
+要读取非UTF-8编码的文本文件，需要给 `open()` 函数传入 `encoding` 参数，例如，读取 `GBK` 编码的文件：
+
+```bash
+>>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk')
+>>> f.read()
+# '测试'
+# 遇到有些编码不规范的文件，你可能会遇到UnicodeDecodeError，因为在文本文件中可能夹杂了一些非法编码的字符。
+# 遇到这种情况，open()函数还接收一个 errors 参数，表示如果遇到编码错误后如何处理。最简单的方式是直接忽略：
+>>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk', errors='ignore')
+```
+
+#### 1.5 写文件
+
+写文件和读文件是一样的，唯一区别是调用 `open()` 函数时，传入标识符 `w` 或者 `wb` 表示写文本文件或写二进制文件：
+
+```py
+>>> f = open('/Users/michael/test.txt', 'w')
+>>> f.write('Hello, world!')
+>>> f.close()
+```
+
+你可以反复调用write()来写入文件，但是务必要调用 `f.close()` 来关闭文件。
+
+当我们写文件时，操作系统往往不会立刻把数据写入磁盘，而是放到内存缓存起来，空闲的时候再慢慢写入。只有调用close()方法时，操作系统才保证把没有写入的数据全部写入磁盘。
+
+忘记调用close()的后果是数据可能只写了一部分到磁盘，剩下的丢失了。所以，还是用with语句来得保险：
+
+```py
+with open('/Users/michael/test.txt', 'w') as f:
+    f.write('Hello, world!')
+```
+
+要写入特定编码的文本文件，请给open()函数传入encoding参数，将字符串自动转换成指定编码。
+
+### 2. StringIO 和 BytesIO
+
+`StringIO` 和 `BytesIO` 是在内存中操作 `str` 和 `bytes` 的方法，使得和读写文件具有一致的接口。
+
+#### 2.1 StringIO
+
+很多时候，数据读写不一定是文件，也可以在内存中读写。
+
+StringIO 顾名思义就是在内存中读写 str。
+
+要把 str 写入 StringIO，我们需要先创建一个 StringIO，然后，像文件一样写入即可：
+
+```bash
+>>> from io import StringIO
+>>> f = StringIO()
+>>> f.write('hello')
+5
+>>> f.write(' ')
+1
+>>> f.write('world!')
+6
+>>> print(f.getvalue())
+hello world!
+```
+
+`getvalue()` 方法用于获得写入后的 str。
+
+要读取 `StringIO`，可以用一个 str 初始化 StringIO，然后，像读文件一样读取：
+
+```bash
+>>> from io import StringIO
+>>> f = StringIO('Hello!\nHi!\nGoodbye!')
+>>> while True:
+...     s = f.readline()
+...     if s == '':
+...         break
+...     print(s.strip())
+...
+Hello!
+Hi!
+Goodbye!
+```
+
+#### 2.2 BytesIO
+
+StringIO 操作的只能是 str，如果要操作二进制数据，就需要使用 BytesIO。
+
+BytesIO 实现了在内存中读写 bytes，我们创建一个 BytesIO，然后写入一些 bytes：
+
+```bash
+>>> from io import BytesIO
+>>> f = BytesIO()
+>>> f.write('中文'.encode('utf-8'))
+6
+>>> print(f.getvalue())
+b'\xe4\xb8\xad\xe6\x96\x87'
+```
+
+请注意，写入的不是str，而是经过 UTF-8 编码的bytes。
+
+和 StringIO 类似，可以用一个 bytes 初始化 BytesIO，然后，像读文件一样读取：
+
+```bash
+>>> from io import BytesIO
+>>> f = BytesIO(b'\xe4\xb8\xad\xe6\x96\x87')
+>>> f.read()
+b'\xe4\xb8\xad\xe6\x96\x87'
+```
+
+### 3. 操作文件和目录 `/lessons/tests/with_file.py`
+
+Python 内置的 `os` 模块可以直接调用操作系统提供的接口函数。
+
+```bash
+>>> import os
+>>> os.name # 操作系统类型
+'posix'
+# 如果是 `posix`，说明系统是 Linux、Unix 或 Mac OS X，如果是 `nt`，就是 Windows 系统。
+
+# os 模块的某些函数是跟操作系统相关的。
+>>> os.uname()
+posix.uname_result(sysname='Darwin', nodename='yanqiongs-MacBook-Pro.local', release='15.6.0', version='Darwin Kernel Version 15.6.0: Mon Jan  9 23:07:29 PST 2017; root:xnu-3248.60.11.2.1~1/RELEASE_X86_64', machine='x86
+_64')
+
+# 环境变量
+>>> os.environ
+
+# 要获取某个环境变量的值，可以调用os.environ.get('key')：
+>>> os.environ.get('PATH')
+'/Library/Frameworks/Python.framework/Versions/3.4/bin:/Users/yanqiong/Library/Android/sdk/platform-tools:/Library/Frameworks/Python.framework/Versions/3.4/bin:/Users/yanqiong/Library/Android/sdk/platform-tools:/usr/loc
+al/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/yanqiong/mongodb/bin:/usr/local/deployd/bin:/usr/local/go/bin:/Users/yanqiong/Library/apache-ant-1.9.7/bin:/Users/yanqiong/Library/apache-ant-1.9.7/bin'
+>>> os.environ.get('x', 'default')
+'default'
+```
+
+操作文件和目录的函数一部分放在 `os` 模块中，一部分放在 `os.path` 模块中，这一点要注意一下。查看、创建和删除目录可以这么调用：
+
+```bash
+# 查看当前目录的绝对路径:
+>>> os.path.abspath('.')
+'/Users/michael'
+# 在某个目录下创建一个新目录，首先把新目录的完整路径表示出来:
+>>> os.path.join('/Users/michael', 'testdir')
+'/Users/michael/testdir'
+# 然后创建一个目录:
+>>> os.mkdir('/Users/michael/testdir')
+# 删掉一个目录:
+>>> os.rmdir('/Users/michael/testdir')
+```
+
+把两个路径合成一个时，不要直接拼字符串，而要通过 `os.path.join()` 函数，这样可以正确处理不同操作系统的路径分隔符。
+
+在 Linux/Unix/Mac 下，`os.path.join()` 返回这样的字符串： `part-1/part-2`
+
+而 Windows 下会返回这样的字符串：`part-1\part-2`
+
+同样的道理，要拆分路径时，也不要直接去拆字符串，而要通过 `os.path.split()` 函数，这样可以把一个路径拆分为两部分，后一部分总是最后级别的目录或文件名：
+
+```bash
+>>> os.path.split('/Users/michael/testdir/file.txt')
+('/Users/michael/testdir', 'file.txt')
+```
+
+os.path.splitext()可以直接让你得到文件扩展名，很多时候非常方便：
+
+```bash
+>>> os.path.splitext('/path/to/file.txt')
+('/path/to/file', '.txt')
+```
+
+这些合并、拆分路径的函数并不要求目录和文件要真实存在，它们只对字符串进行操作。
+
+文件操作使用下面的函数。假定当前目录下有一个test.txt文件：
+
+```bash
+# 对文件重命名:
+>>> os.rename('test.txt', 'test.py')
+# 删掉文件:
+>>> os.remove('test.py')
+```
+但是复制文件的函数居然在 `os` 模块中不存在！原因是复制文件并非由操作系统提供的系统调用。理论上讲，我们通过上一节的读写文件可以完成文件复制，只不过要多写很多代码。
+
+幸运的是 `shutil` 模块提供了 `copyfile()` 的函数，你还可以在 `shutil` 模块中找到很多实用函数，它们可以看做是 `os` 模块的补充。
+
+最后看看如何利用 Python 的特性来过滤文件。比如我们要列出当前目录下的所有目录，只需要一行代码：
+
+```bash
+>>> [x for x in os.listdir('.') if os.path.isdir(x)]
+['.git', 'config', 'lessons', 'logs']
+```
+
+要列出所有的.py文件，也只需一行代码：
+
+```bash
+>>> [x for x in os.listdir('.') if os.path.isfile(x) and os.path.splitext(x)[1]=='.py']
+['learning.py']
+```
+
+### 4. 序列化 `/lessons/tests/pickling_unpickling.py`
+
+把变量从内存中变成可存储或传输的过程称之为序列化，在 Python 中叫 `pickling`。
+
+序列化之后，就可以把序列化后的内容写入磁盘，或者通过网络传输到别的机器上。
+
+反过来，把变量内容从序列化的对象重新读到内存里称之为反序列化，即 `unpickling`。
+
+Python 提供了 `pickle` 模块来实现序列化。
+
+#### 4.1 pickle
+
+`pickle.dumps` / `pickle.dump`
+`pickle.loads` / `pickle.load`
+
+#### 4.2 JSON 
+
+[Python3 JSON 文档](https://docs.python.org/3/library/json.html#json.dumps)
+
+JSON 表示的对象就是标准的 JavaScript 语言的对象，JSON 和 Python 内置的数据类型对应如下：
+
+| JSON类型 | Python类型 |
+| --- | --- |
+| {} | dict |
+| [] | list |
+| "string" | str |
+| 1234.56 | int或float |
+| true/false | True/False |
+| null | None |
+
+由于 JSON 标准规定 JSON 编码是 UTF-8，所以我们总是能正确地在 Python 的 str 与 JSON 的字符串之间转换。
+
+通常 class 的实例都有一个 `__dict__` 属性，它就是一个 dict，用来存储实例变量。也有少数例外，比如定义了 `__slots__` 的class。
+
