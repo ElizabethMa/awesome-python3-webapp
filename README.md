@@ -976,3 +976,253 @@ JSON 表示的对象就是标准的 JavaScript 语言的对象，JSON 和 Python
 
 通常 class 的实例都有一个 `__dict__` 属性，它就是一个 dict，用来存储实例变量。也有少数例外，比如定义了 `__slots__` 的class。
 
+## 九、进程和线程 `lessons/process`
+
+### 1. 多进程
+
+#### 1.1 `fork()`
+ Unix/Linux 操作系统提供了 `fork()` 系统调用， 调用一次，返回两次。分别在父子进程内返回。
+ 
+ 子进程永远返回 `0`, 父进程返回子进程的 ID。
+
+ 子进程字需要调用 `getppid()` 就可以拿到父进程的 ID。
+
+ python 的 `os` 模块封装了常见的系统调用。Windows 无法使用。
+
+ ```py
+import os
+
+print('Process (%s) start...' % os.getpid())
+# Only works on Unix/Linux/Mac:
+pid = os.fork()
+if pid == 0:
+    print('I am child process (%s) and my parent is %s.' % (os.getpid(), os.getppid()))
+else:
+    print('I (%s) just created a child process (%s).' % (os.getpid(), pid))
+```
+
+#### 1.2 `multiprocessing` `Process`
+
+`multiprocessing` 模块是跨平台版本的多进程模块。
+
+`multiprocessing` 模块提供了一个 `Process` 类来代表一个进程对象.
+
+`join()` 方法可以等待子进程结束后再继续往下运行，通常用于进程间的同步。
+
+#### 1.3 `Pool`
+
+如果要启动大量的子进程，可以用进程池的方式批量创建子进程
+
+#### 1.4 子进程 `subprocess`
+
+`subprocess` 模块可以让我们非常方便地启动一个子进程，然后控制其输入和输出。
+
+#### 1.5 进程间通信
+
+Python 的 `multiprocessing` 模块包装了底层的机制，提供了 `Queue` 、`Pipes` 等多种方式来交换数据。
+
+### 2. 多线程
+
+进程是由若干线程组成的，一个进程至少有一个线程。
+
+于线程是操作系统直接支持的执行单元，因此，高级语言通常都内置多线程的支持，Python也不例外，并且，Python的线程是真正的Posix Thread，而不是模拟出来的线程。
+
+#### 2.1 `threading` 
+进程是由若干线程组成的，一个进程至少有一个线程
+
+Python的标准库提供了两个模块：`_thread` 和 `threading` ，`_thread` 是低级模块，`threading` 是高级模块，对 `_thread` 进行了封装。绝大多数情况下，我们只需要使用 `threading` 这个高级模块。
+
+启动一个线程就是把一个函数传入并创建Thread实例，然后调用start()开始执行：
+
+```py
+import time, threading
+
+# 新线程执行的代码:
+def loop():
+    print('thread %s is running...' % threading.current_thread().name)
+    n = 0
+    while n < 5:
+        n = n + 1
+        print('thread %s >>> %s' % (threading.current_thread().name, n))
+        time.sleep(1)
+    print('thread %s ended.' % threading.current_thread().name)
+
+# 任何进程默认会启动一个线程，我们把该线程称为主线程，主线程又可以启动新的线程，Python的 threading 模块有个 current_thread() 函数，它永远返回当前线程的实例。
+# 主线程实例的名字叫 MainThread，子线程的名字在创建时指定，我们用 LoopThread 命名子线程。
+# 如果不起名字Python就自动给线程命名为Thread-1，Thread-2……
+
+print('thread %s is running...' % threading.current_thread().name)
+t = threading.Thread(target=loop, name='LoopThread')
+t.start()
+t.join()
+print('thread %s ended.' % threading.current_thread().name)
+```
+
+#### 2.2 `Lock`
+多线程编程，模型复杂，容易发生冲突，必须用锁加以隔离，同时，又要小心死锁的发生。
+
+多线程和多进程最大的不同在于，多进程中，同一个变量，各自有一份拷贝存在于每个进程中，互不影响，而多线程中，所有变量都由所有线程共享，
+
+```py
+'多线程同时操作同一个变量把内容改乱'
+
+import time, threading
+
+# 假定这是你的银行存款:
+balance = 0
+
+def change_it(n):
+    # 先存后取，结果应该为0:
+    global balance
+    balance = balance + n
+    balance = balance - n
+
+def run_thread(n):
+    for i in range(100000):
+        change_it(n)
+
+t1 = threading.Thread(target=run_thread, args=(5,))
+t2 = threading.Thread(target=run_thread, args=(8,))
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+print(balance)
+```
+
+```py
+'多线程同时操作同一个变量 - 加锁'
+
+import time, threading
+
+# 假定这是你的银行存款:
+balance = 0
+lock = threading.Lock()
+
+def change_it(n):
+    # 先存后取，结果应该为0:
+    global balance
+    balance = balance + n
+    balance = balance - n
+
+def run_thread(n):
+    for i in range(100000):
+        # 先获取锁
+        lock.acquire()
+        try:
+            change_it(n)
+        finally:
+            lock.release()
+
+# 获得锁的线程用完后一定要释放锁，否则那些苦苦等待锁的线程将永远等待下去，成为死线程。所以我们用try...finally来确保锁一定会被释放。
+
+t1 = threading.Thread(target=run_thread, args=(5,))
+t2 = threading.Thread(target=run_thread, args=(8,))
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+print(balance)
+```
+
+#### 2.3 多核CPU
+
+因为Python的线程虽然是真正的线程，但解释器执行代码时，有一个GIL锁：Global Interpreter Lock，任何Python线程执行前，必须先获得GIL锁，然后，每执行100条字节码，解释器就自动释放GIL锁，让别的线程有机会执行。这个GIL全局锁实际上把所有线程的执行代码都给上了锁，所以，多线程在Python中只能交替执行，即使100个线程跑在100核CPU上，也只能用到1个核。
+
+GIL是Python解释器设计的历史遗留问题，通常我们用的解释器是官方实现的CPython，要真正利用多核，除非重写一个不带GIL的解释器。
+
+所以，在Python中，可以使用多线程，但不要指望能有效利用多核。如果一定要通过多线程利用多核，那只能通过C扩展来实现，不过这样就失去了Python简单易用的特点。
+
+不过，也不用过于担心，Python虽然不能利用多线程实现多核任务，但可以通过多进程实现多核任务。多个Python进程有各自独立的GIL锁，互不影响。
+
+### 3. ThreadLocal
+
+一个 `ThreadLocal` 变量虽然是全局变量，但每个线程都只能读写自己线程的独立副本，互不干扰。ThreadLocal解决了参数在一个线程中各个函数之间互相传递的问题。
+
+```py
+import threading
+
+# 创建全局ThreadLocal对象:
+local_school = threading.local()
+
+def process_student():
+    # 获取当前线程关联的student:
+    std = local_school.student
+    print('Hello, %s (in %s)' % (std, threading.current_thread().name))
+
+def process_thread(name):
+    # 绑定ThreadLocal的student:
+    local_school.student = name
+    process_student()
+
+t1 = threading.Thread(target= process_thread, args=('Alice',), name='Thread-A')
+t2 = threading.Thread(target= process_thread, args=('Bob',), name='Thread-B')
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+```
+
+执行结果：
+```
+Hello, Alice (in Thread-A)
+Hello, Bob (in Thread-B)
+```
+
+全局变量 `local_school` 就是一个 `ThreadLocal` 对象，每个 `Thread` 对它都可以读写 student 属性，但互不影响。你可以把 `local_school` 看成全局变量，但每个属性如 `local_school.student` 都是线程的局部变量，可以任意读写而互不干扰，也不用管理锁的问题，ThreadLocal 内部会处理。
+
+可以理解为全局变量 `local_school` 是一个 `dict`，不但可以用 `local_school.student`，还可以绑定其他变量，如 local_school.teacher 等等。
+
+ThreadLocal最常用的地方就是为每个线程绑定一个数据库连接，HTTP请求，用户身份信息等，这样一个线程的所有调用到的处理函数都可以非常方便地访问这些资源。
+
+### 4. 进程 vs 线程
+
+进程更稳定
+
+### 5. 分布式进程
+
+file > task_master.py 
+
+file > task_master.py
+
+Python 的 `multiprocessing` 模块不但支持多进程，其中 `managers` 子模块还支持把多进程分布到多台机器上。一个服务进程可以作为调度者，将任务分布到其他多个进程中，依靠网络通信。由于 `managers` 模块封装很好，不必了解网络通信的细节，就可以很容易地编写分布式多进程程序。
+
+authkey 可以保证两台机器正常通信，不被其他机器恶意干扰。如果 `task_worker.py` 的 `authkey` 和`task_master.py` 的 `authkey` 不一致，肯定连接不上。
+
+Python 的分布式进程接口简单，封装良好，适合需要把繁重任务分布到多台机器的环境下。
+
+注意 Queue 的作用是用来传递任务和接收结果，每个任务的描述数据量要尽量小。比如发送一个处理日志文件的任务，就不要发送几百兆的日志文件本身，而是发送日志文件存放的完整路径，由Worker进程再去共享的磁盘上读取文件。
+
+## 十、正则表达式
+
+
+## 十一、常用内建模块
+
+
+## 十二、常用第三方模块
+
+
+## 十三、 virtualenv
+
+
+## 十四、图形界面
+
+
+## 十五、网络编程
+
+
+## 十六、电子邮件
+
+
+## 十七、访问数据库
+
+
+## 十八、 web 开发
+
+
+## 十九、异步 IO
+
+
+## 二十、实战
+
+
