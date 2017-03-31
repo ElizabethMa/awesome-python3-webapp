@@ -1296,6 +1296,9 @@ re_telephone.match('010-8086').groups()
 
 ### 1. datetime
 
+datetime 表示的时间需要时区信息才能确定一个特定的时间，否则只能视为本地时间。
+
+如果要存储 datetime，最佳方法是将其转换为 timestamp 再存储，因为 timestamp 的值与时区完全无关。
 
 ### 2. collections
 
