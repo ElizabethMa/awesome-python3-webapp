@@ -1302,6 +1302,8 @@ datetime 表示的时间需要时区信息才能确定一个特定的时间，�
 
 ### 2. collections
 
+`collections` 模块提供了一些有用的集合类，可以根据需要选用。
+
 #### namedtuple
 
 `namedtuple` 是一个函数，它用来创建一个自定义的 `tuple` 对象，并且规定了 `tuple` 元素的个数，并可以用属性而不是索引来引用 `tuple` 的某个元素。
@@ -1318,8 +1320,8 @@ datetime 表示的时间需要时区信息才能确定一个特定的时间，�
 
 使用 `dict` 时，如果引用的 `Key` 不存在，就会抛出 `KeyError`。如果希望 `key` 不存在时，返回一个默认值，就可以用 `defaultdict`.
 
-
 #### OrderedDict
+
 
 #### Counter
 

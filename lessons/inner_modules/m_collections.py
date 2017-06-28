@@ -3,7 +3,7 @@
 
 'namedtuple deque'
 
-from collections import namedtuple, deque, defaultdict, OrderedDict
+from collections import namedtuple, deque, defaultdict, OrderedDict, Counter
 
 print('\n===== namedtuple =====\n')
 
@@ -38,29 +38,20 @@ print('isinstance(dd, defaultdict) : %s' % isinstance(dd, defaultdict))
 print('isinstance(dd, dict) : %s' % isinstance(dd, dict))
 
 print('\n===== OrderedDict =====\n')
+# 使用 `dict` 时，`Key` 是无序的。在对dict做迭代时，我们无法确定Key的顺序。
+# 如果要保持 `Key` 的顺序，可以用 `OrderedDict`
+d = dict([('a', 1), ('b', 2), ('c', 3)])
+print(d)
+od = OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+print(od) # OrderedDict的Key是有序的
+# 注意，OrderedDict的Key会按照插入的顺序排列，不是Key本身排序
+od2 = OrderedDict()
+od2['z'] = 1
+od2['y'] = 2
+od2['x'] = 3
+print(list(od.keys()))
 
-使用dict时，Key是无序的。在对dict做迭代时，我们无法确定Key的顺序。
-
-如果要保持Key的顺序，可以用OrderedDict：
-
->>> from collections import OrderedDict
->>> d = dict([('a', 1), ('b', 2), ('c', 3)])
->>> d # dict的Key是无序的
-{'a': 1, 'c': 3, 'b': 2}
->>> od = OrderedDict([('a', 1), ('b', 2), ('c', 3)])
->>> od # OrderedDict的Key是有序的
-OrderedDict([('a', 1), ('b', 2), ('c', 3)])
-注意，OrderedDict的Key会按照插入的顺序排列，不是Key本身排序：
-
->>> od = OrderedDict()
->>> od['z'] = 1
->>> od['y'] = 2
->>> od['x'] = 3
->>> list(od.keys()) # 按照插入的Key的顺序返回
-['z', 'y', 'x']
-OrderedDict可以实现一个FIFO（先进先出）的dict，当容量超出限制时，先删除最早添加的Key：
-
-from collections import OrderedDict
+# OrderedDict 可以实现一个 FIFO（先进先出）的 dict，当容量超出限制时，先删除最早添加的Key:
 
 class LastUpdatedOrderedDict(OrderedDict):
 
@@ -80,5 +71,9 @@ class LastUpdatedOrderedDict(OrderedDict):
             print('add:', (key, value))
         OrderedDict.__setitem__(self, key, value)
 
-
-
+print('\n===== Counter =====\n')
+# Counter实际上也是dict的一个子类
+c = Counter()
+for ch in 'programming':
+    c[ch] = c[ch] + 1
+print(c)
