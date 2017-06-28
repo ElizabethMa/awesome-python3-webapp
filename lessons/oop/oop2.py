@@ -55,7 +55,3 @@ K.name = 'nik'
 K.age = 5
 # K.score = 90
 # AttributeError: 'Kid' object has no attribute 'score'
-
-
-
-
